@@ -25,5 +25,7 @@ export function getEnv() {
 }
 
 export function isDevAuthEnabled(): boolean {
-  return process.env.AUTH_DEV_MODE === "true" && process.env.NODE_ENV !== "production";
+  if (process.env.AUTH_DEV_MODE === "true") return true;
+  if (process.env.AUTH_DEV_MODE === "false") return false;
+  return process.env.NODE_ENV !== "production";
 }
