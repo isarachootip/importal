@@ -1,0 +1,46 @@
+enum RoleCode {
+  IMPORT
+  MER
+  GD
+  GM
+  VP
+  EVP
+  VENDOR
+  FORWARDER
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  thaiName     String?
+  nickname     String?
+  isHeadImport Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles              UserRole[]
+  ownedBrands        Brand[]             @relation("BrandOwner")
+  ownedCases         ImportCase[]        @relation("CaseOwner")
+  uploadedDocs       CaseDocument[]
+  uploadedPiFiles    PackagingPiFile[]
+  uploadedArtworks   PackagingArtwork[]
+  preQcReviews       PackagingPreQc[]
+  packagingApprovals PackagingApproval[]
+  packagingComments  PackagingComment[]
+  auditEvents        AuditEvent[]
+  notifications      Notification[]
+}
+
+model UserRole {
+  id     String   @id @default(cuid())
+  userId String
+  role   RoleCode
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@index([role])
+}

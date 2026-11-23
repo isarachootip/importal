@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: importal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-importal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-importal_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-importal}
+      TZ: Asia/Bangkok
+    ports:
+      - "${POSTGRES_PORT:-5442}:5432"
+    volumes:
+      - importal_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-importal} -d ${POSTGRES_DB:-importal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: importal-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-importal}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-importal_secret}
+    ports:
+      - "${MINIO_API_PORT:-9010}:9000"
+      - "${MINIO_CONSOLE_PORT:-9011}:9001"
+    volumes:
+      - importal_minio:/data
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: importal-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+
+volumes:
+  importal_pgdata:
+  importal_minio:

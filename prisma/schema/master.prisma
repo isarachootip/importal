@@ -1,0 +1,154 @@
+enum PatternGroup {
+  APPROVAL_PATTERN
+  NEW_PATTERN
+}
+
+enum SkuCategory {
+  REPEAT_SKU
+  NEW_SKU
+}
+
+enum ChecklistCategory {
+  IMPORT_PRE_SUBMIT
+  GD_PRE_QC_REJECT
+}
+
+model Brand {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String   @unique
+  groupName String
+  ownerId   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User?         @relation("BrandOwner", fields: [ownerId], references: [id])
+  vendors BrandVendor[]
+  cases   ImportCase[]
+
+  @@index([ownerId])
+}
+
+model VendorFactory {
+  id           String   @id @default(cuid())
+  code         String?  @unique
+  name         String
+  country      String   @default("CN")
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  brands     BrandVendor[]
+  cases      ImportCase[]
+  quotations SourcingQuotation[]
+}
+
+model BrandVendor {
+  brandId  String
+  vendorId String
+
+  brand  Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  vendor VendorFactory @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@id([brandId, vendorId])
+}
+
+model ProductSubclass {
+  id       String  @id @default(cuid())
+  code     String  @unique
+  nameTh   String
+  nameEn   String?
+  isActive Boolean @default(true)
+
+  cases ImportCase[]
+}
+
+model PackagingType {
+  id        String  @id @default(cuid())
+  code      String  @unique
+  nameTh    String
+  nameEn    String?
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  jobs PackagingJobType[]
+}
+
+model PackagingCaseConfig {
+  id              String       @id @default(cuid())
+  caseNumber      Int          @unique
+  patternGroup    PatternGroup
+  skuCategory     SkuCategory
+  name            String
+  descriptionTh   String
+  infoDays        Int
+  designDays      Int
+  briefDays       Int          @default(1)
+  finalDays       Int          @default(1)
+  reviseFinalDays Int          @default(1)
+  productionDays  Int          @default(55)
+  logisticDays    Int          @default(20)
+  designWeights   Json
+  isActive        Boolean      @default(true)
+  updatedAt       DateTime     @updatedAt
+
+  packagingJobs PackagingJob[]
+}
+
+model ChecklistItemConfig {
+  id         String            @id @default(cuid())
+  category   ChecklistCategory
+  code       String            @unique
+  labelTh    String
+  labelEn    String?
+  isRequired Boolean           @default(true)
+  sortOrder  Int               @default(0)
+  isActive   Boolean           @default(true)
+
+  answers PackagingChecklistAnswer[]
+
+  @@index([category, sortOrder])
+}
+
+model ApprovalRuleConfig {
+  id         String   @id @default(cuid())
+  stageKey   String
+  stepOrder  Int
+  role       RoleCode
+  isParallel Boolean  @default(false)
+  slaDays    Int      @default(1)
+  isEnabled  Boolean  @default(true)
+
+  @@unique([stageKey, stepOrder, role])
+  @@index([stageKey, isEnabled])
+}
+
+model FinalApproverConfig {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  displayName String
+  role        RoleCode
+  isActive    Boolean  @default(true)
+}
+
+model CompanyHoliday {
+  id              String   @id @default(cuid())
+  date            DateTime @unique @db.Date
+  yearBE          Int
+  nameTh          String
+  isSubstitute    Boolean  @default(false)
+  announcementRef String?
+
+  @@index([yearBE])
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+}

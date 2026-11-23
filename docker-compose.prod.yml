@@ -1,0 +1,62 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: importal-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://importal:${POSTGRES_PASSWORD:-importal_prod}@postgres:5432/importal?schema=public
+      AUTH_DEV_MODE: "false"
+      AUTH_ALLOWED_DOMAIN: chg.co.th
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production-32-characters-min}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ap-southeast-1
+      S3_BUCKET: importal-files
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-importal}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-importal_secret}
+      S3_FORCE_PATH_STYLE: "true"
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_FROM: ${SMTP_FROM:-Importal <no-reply@chg.co.th>}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      CRON_SECRET: ${CRON_SECRET:-change-me-cron-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: importal-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: importal
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-importal_prod}
+      POSTGRES_DB: importal
+    volumes:
+      - importal_pg_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U importal -d importal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: importal-minio-prod
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-importal}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-importal_secret}
+    volumes:
+      - importal_minio_prod:/data
+
+volumes:
+  importal_pg_prod:
+  importal_minio_prod:
