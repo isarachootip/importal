@@ -1,0 +1,45 @@
+model FormDraft {
+  draftKey  String   @id
+  values    Json
+  fileNames String[]
+  savedDate String
+  savedTime String
+  savedBy   String
+  updatedAt DateTime @updatedAt
+}
+
+model MetricReview {
+  reviewKey String   @id
+  status    String   @default("")
+  note      String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationSetting {
+  eventKey  String   @id
+  mode      String
+  updatedAt DateTime @updatedAt
+}
+
+model EmailOutbox {
+  id            String   @id @default(cuid())
+  sentDate      String
+  eventKey      String
+  jobId         String?
+  piNumber      String
+  toList        String[]
+  toEmails      String[]
+  ccList        String[]
+  ccEmails      String[]
+  subject       String
+  headText      String
+  todoText      String
+  dueDate       String?
+  infoRows      Json
+  note          String   @default("")
+  mode          String
+  smtpDelivered Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}

@@ -1,47 +1,29 @@
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/db/prisma";
-import { isDevAuthEnabled } from "@/lib/env";
-import type { SessionUser } from "./types";
+import { ROLES_META } from "@/lib/domain/aw-constants";
+import type { TrackerRoleKey } from "@/lib/domain/directory-import-design";
+import { findStaffByDisplayName } from "@/lib/domain/mdsg-resolver";
+import type { TrackerSession } from "./types";
 
-export const SESSION_COOKIE_NAME = "importal_dev_uid";
+export const ROLE_COOKIE = "aw_tracker_role";
+export const USER_COOKIE = "aw_tracker_user";
 
-export async function getSessionUserById(userId: string): Promise<SessionUser | null> {
-  const user = await prisma.user.findFirst({
-    where: { id: userId, isActive: true },
-    include: {
-      roles: { select: { role: true } },
-      ownedBrands: { select: { id: true } },
-    },
-  });
-  if (!user) return null;
+const VALID_ROLES = new Set<TrackerRoleKey>(["import", "mdsg", "evp", "designer", "photographer", "mgmt"]);
+
+export async function getTrackerSession(): Promise<TrackerSession> {
+  const store = await cookies();
+  const rawRole = store.get(ROLE_COOKIE)?.value as TrackerRoleKey | undefined;
+  const role: TrackerRoleKey = rawRole && VALID_ROLES.has(rawRole) ? rawRole : "import";
+  const meta = ROLES_META[role];
+
+  const rawUser = store.get(USER_COOKIE)?.value;
+  const matched = rawUser ? findStaffByDisplayName(rawUser) : undefined;
+  const activeStaff = matched && matched.role === role ? matched : findStaffByDisplayName(meta.defaultUser);
 
   return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    thaiName: user.thaiName,
-    nickname: user.nickname,
-    roles: user.roles.map((r) => r.role),
-    ownedBrandIds: user.ownedBrands.map((b) => b.id),
+    role,
+    roleName: meta.name,
+    initials: meta.ini,
+    userDisplayName: activeStaff?.displayName ?? meta.defaultUser,
+    userEmail: activeStaff?.email ?? "no-reply@chg.co.th",
   };
-}
-
-export async function getCurrentUser(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const uid = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  if (uid) {
-    return getSessionUserById(uid);
-  }
-
-  if (isDevAuthEnabled()) {
-    const defaultUser = await prisma.user.findUnique({
-      where: { email: "naparat@chg.co.th" },
-      select: { id: true },
-    });
-    if (defaultUser) {
-      return getSessionUserById(defaultUser.id);
-    }
-  }
-
-  return null;
 }

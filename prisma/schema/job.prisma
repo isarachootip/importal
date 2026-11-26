@@ -1,0 +1,97 @@
+model PackagingJob {
+  id            String   @id @default(cuid())
+  jobCode       String   @unique
+  piNumber      String   @unique
+  piDate        String
+  bu            String
+  supplier      String
+  brand         String
+  patternId     Int
+  sdeptCodes    Int[]
+  itemCount     Int
+  license       String
+  packages      String[]
+  importerName  String
+  designerName  String
+  briefRequired String
+  folderUrl     String
+  hasPhotoShoot Boolean  @default(false)
+  leadtimeDays  Int?
+  poNumber      String?
+  skuFileName   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  history JobHistory[]
+  edits   JobEditLog[]
+  files   JobFile[]
+  skus    JobSku[]
+
+  @@index([piDate])
+  @@index([brand])
+  @@index([importerName])
+  @@index([designerName])
+}
+
+model JobHistory {
+  id          String   @id @default(cuid())
+  jobId       String
+  seq         Int
+  subStatus   String
+  actionDate  String
+  actorRole   String
+  actionTitle String
+  note        String   @default("")
+  mark        String?
+  createdAt   DateTime @default(now())
+
+  job PackagingJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, seq])
+}
+
+model JobEditLog {
+  id         String   @id @default(cuid())
+  jobId      String
+  editedDate String
+  actorRole  String
+  actorUser  String
+  changes    String[]
+  slaDiff    String   @default("")
+  createdAt  DateTime @default(now())
+
+  job PackagingJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, createdAt])
+}
+
+model JobFile {
+  id             String   @id @default(cuid())
+  jobId          String
+  fileName       String
+  storageKey     String?
+  isLink         Boolean  @default(false)
+  mimeType       String?
+  sizeBytes      Int?
+  uploadedByRole String
+  uploadedDate   String
+  createdAt      DateTime @default(now())
+
+  job PackagingJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+}
+
+model JobSku {
+  id                String  @id @default(cuid())
+  jobId             String
+  seq               Int
+  skuCode           String
+  mmsCreatedDate    String
+  goodsReceivedDate String?
+
+  job PackagingJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, skuCode])
+  @@index([jobId, seq])
+}

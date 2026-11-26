@@ -3,15 +3,16 @@ import { prisma } from "@/lib/db/prisma";
 
 export async function GET() {
   try {
-    const [users, brands, cases] = await Promise.all([
+    const [users, sdepts, jobs] = await Promise.all([
       prisma.user.count(),
-      prisma.brand.count(),
-      prisma.importCase.count(),
+      prisma.sdeptMaster.count(),
+      prisma.packagingJob.count(),
     ]);
     return NextResponse.json({
       status: "ok",
+      app: "AW Packaging Tracker",
       timezone: "Asia/Bangkok",
-      counts: { users, brands, cases },
+      counts: { users, sdepts, jobs },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Database check failed";

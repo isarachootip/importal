@@ -1,28 +1,35 @@
 import type { Metadata } from "next";
-import { Inter, Sarabun } from "next/font/google";
+import { IBM_Plex_Sans_Thai } from "next/font/google";
+import { TrackerProvider } from "@/components/context/tracker-context";
+import { TrackerShell } from "@/components/shell/tracker-shell";
+import { getTrackerSession } from "@/lib/auth/session";
+import { getBootstrapState } from "@/lib/services/settings-service";
 import "./globals.css";
 
-const sarabun = Sarabun({
+const ibmPlexThai = IBM_Plex_Sans_Thai({
   subsets: ["thai", "latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-sarabun",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
+  variable: "--font-ibm-thai",
 });
 
 export const metadata: Metadata = {
-  title: "Importal — ระบบ Import & Packaging Design Workflow",
-  description: "ระบบบริหารงานนำเข้าสินค้า House Brand และ Packaging Design Workflow",
+  title: "AW Packaging Tracker — งานออกแบบบรรจุภัณฑ์ สินค้า Import",
+  description: "ระบบติดตามงานออกแบบบรรจุภัณฑ์ สินค้า Import (AW Packaging Tracker)",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getTrackerSession();
+  const initial = await getBootstrapState(session);
+
   return (
-    <html lang="th" className={`${sarabun.variable} ${inter.variable}`}>
-      <body className="min-h-screen antialiased">{children}</body>
+    <html lang="th" className={ibmPlexThai.variable}>
+      <body>
+        <TrackerProvider initial={initial}>
+          <TrackerShell>{children}</TrackerShell>
+        </TrackerProvider>
+      </body>
     </html>
   );
 }
